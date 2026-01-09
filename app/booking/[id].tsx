@@ -179,9 +179,9 @@ export default function BookingDetailsScreen() {
           </tr>
           <tr>
             <td><strong>${property.name}</strong></td>
-            <td>${new Date(booking.check_in).toLocaleDateString()}</td>
-            <td>${new Date(booking.check_out).toLocaleDateString()}</td>
-            <td>${getDaysBetween(booking.check_in, booking.check_out)}</td>
+            <td>${new Date(booking.check_in_date).toLocaleDateString()}</td>
+            <td>${new Date(booking.check_out_date).toLocaleDateString()}</td>
+            <td>${getDaysBetween(booking.check_in_date, booking.check_out_date)}</td>
             <td style="text-align: right;">$${booking.total_amount || 0}</td>
           </tr>
           <tr class="total-row">
@@ -281,20 +281,20 @@ export default function BookingDetailsScreen() {
                     <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm">
                         <Text className="text-gray-500 text-sm">Check-in</Text>
                         <Text className="text-lg font-bold text-gray-800">
-                            {new Date(booking.check_in).toLocaleDateString()}
+                            {new Date(booking.check_in_date).toLocaleDateString()}
                         </Text>
                     </View>
                     <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm">
                         <Text className="text-gray-500 text-sm">Check-out</Text>
                         <Text className="text-lg font-bold text-gray-800">
-                            {new Date(booking.check_out).toLocaleDateString()}
+                            {new Date(booking.check_out_date).toLocaleDateString()}
                         </Text>
                     </View>
                 </View>
 
                 <View className="bg-primary-100 rounded-2xl p-4 mb-4 items-center">
                     <Text className="text-primary-800 font-bold text-xl">
-                        {getDaysBetween(booking.check_in, booking.check_out)} nights
+                        {getDaysBetween(booking.check_in_date, booking.check_out_date)} nights
                     </Text>
                 </View>
 

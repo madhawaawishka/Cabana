@@ -85,7 +85,6 @@ export default function AddPropertyScreen() {
         const { error } = await supabase.from('properties').insert({
             owner_id: user.id,
             name: name.trim(),
-            image_url: imageUrl,
         });
 
         setLoading(false);

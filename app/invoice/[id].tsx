@@ -104,7 +104,7 @@ export default function InvoiceScreen() {
         </div>
         <p><strong>Guest:</strong> ${booking.customer_name}</p>
         <p><strong>Property:</strong> ${property.name}</p>
-        <p><strong>Dates:</strong> ${new Date(booking.check_in).toLocaleDateString()} - ${new Date(booking.check_out).toLocaleDateString()} (${getDaysBetween(booking.check_in, booking.check_out)} nights)</p>
+        <p><strong>Dates:</strong> ${new Date(booking.check_in_date).toLocaleDateString()} - ${new Date(booking.check_out_date).toLocaleDateString()} (${getDaysBetween(booking.check_in_date, booking.check_out_date)} nights)</p>
         <div class="total">Total: $${invoice.amount}</div>
       </body>
       </html>
@@ -154,19 +154,19 @@ export default function InvoiceScreen() {
                         <View>
                             <Text className="text-gray-500 text-sm">Check-in</Text>
                             <Text className="font-bold text-gray-800">
-                                {new Date(booking.check_in).toLocaleDateString()}
+                                {new Date(booking.check_in_date).toLocaleDateString()}
                             </Text>
                         </View>
                         <View>
                             <Text className="text-gray-500 text-sm">Check-out</Text>
                             <Text className="font-bold text-gray-800">
-                                {new Date(booking.check_out).toLocaleDateString()}
+                                {new Date(booking.check_out_date).toLocaleDateString()}
                             </Text>
                         </View>
                         <View>
                             <Text className="text-gray-500 text-sm">Nights</Text>
                             <Text className="font-bold text-gray-800">
-                                {getDaysBetween(booking.check_in, booking.check_out)}
+                                {getDaysBetween(booking.check_in_date, booking.check_out_date)}
                             </Text>
                         </View>
                     </View>

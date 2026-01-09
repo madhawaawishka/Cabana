@@ -171,10 +171,10 @@ export default function PropertyDetailsScreen() {
                                 <View className="flex-1">
                                     <Text className="font-bold text-gray-800">{booking.customer_name}</Text>
                                     <Text className="text-gray-500 text-sm">
-                                        {new Date(booking.check_in).toLocaleDateString()} - {new Date(booking.check_out).toLocaleDateString()}
+                                        {new Date(booking.check_in_date).toLocaleDateString()} - {new Date(booking.check_out_date).toLocaleDateString()}
                                     </Text>
-                                    <Text className="text-gray-500 text-sm">
-                                        {getDaysBetween(booking.check_in, booking.check_out)} days
+                                    <Text className="text-xs text-gray-400">
+                                        {getDaysBetween(booking.check_in_date, booking.check_out_date)} days
                                     </Text>
                                 </View>
                                 <View className="items-end">

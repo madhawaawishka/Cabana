@@ -45,7 +45,7 @@ export default function CalendarScreen() {
             .from('bookings')
             .select('*')
             .eq('property_id', selectedProperty.id)
-            .order('check_in', { ascending: true });
+            .order('check_in_date', { ascending: true });
 
         if (data && !error) {
             setBookings(data);
@@ -58,14 +58,14 @@ export default function CalendarScreen() {
         const marked: MarkedDates = {};
 
         bookingData.forEach((booking) => {
-            const start = new Date(booking.check_in);
-            const end = new Date(booking.check_out);
+            const start = new Date(booking.check_in_date);
+            const end = new Date(booking.check_out_date);
             const color = booking.color || generateCustomerColor(booking.customer_name);
 
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                 const dateStr = d.toISOString().split('T')[0];
-                const isStart = dateStr === booking.check_in;
-                const isEnd = dateStr === booking.check_out;
+                const isStart = dateStr === booking.check_in_date;
+                const isEnd = dateStr === booking.check_out_date;
 
                 if (!marked[dateStr]) {
                     marked[dateStr] = { periods: [] };
@@ -107,8 +107,8 @@ export default function CalendarScreen() {
 
     const getBookingsForDate = (date: string) => {
         return bookings.filter((b) => {
-            const checkIn = new Date(b.check_in);
-            const checkOut = new Date(b.check_out);
+            const checkIn = new Date(b.check_in_date);
+            const checkOut = new Date(b.check_out_date);
             const selected = new Date(date);
             return selected >= checkIn && selected <= checkOut;
         });
@@ -150,8 +150,8 @@ export default function CalendarScreen() {
                     <TouchableOpacity
                         key={property.id}
                         className={`px-4 py-2 rounded-full mr-2 ${selectedProperty?.id === property.id
-                                ? 'bg-primary-600'
-                                : 'bg-white border border-gray-300'
+                            ? 'bg-primary-600'
+                            : 'bg-white border border-gray-300'
                             }`}
                         onPress={() => setSelectedProperty(property)}
                     >
@@ -224,7 +224,7 @@ export default function CalendarScreen() {
                                 <View className="flex-1">
                                     <Text className="font-bold text-gray-800">{booking.customer_name}</Text>
                                     <Text className="text-gray-500 text-sm">
-                                        {getDaysBetween(booking.check_in, booking.check_out)} days
+                                        {getDaysBetween(booking.check_in_date, booking.check_out_date)} days
                                     </Text>
                                 </View>
                                 <Text className={`font-medium ${booking.is_paid ? 'text-green-600' : 'text-red-500'}`}>
@@ -263,10 +263,10 @@ export default function CalendarScreen() {
                                 <View className="flex-1">
                                     <Text className="font-bold text-gray-800">{booking.customer_name}</Text>
                                     <Text className="text-gray-500 text-sm">
-                                        {new Date(booking.check_in).toLocaleDateString()} - {new Date(booking.check_out).toLocaleDateString()}
+                                        {new Date(booking.check_in_date).toLocaleDateString()} - {new Date(booking.check_out_date).toLocaleDateString()}
                                     </Text>
                                     <Text className="text-gray-500 text-sm">
-                                        {getDaysBetween(booking.check_in, booking.check_out)} days •
+                                        {getDaysBetween(booking.check_in_date, booking.check_out_date)} days •
                                         {booking.total_amount ? ` $${booking.total_amount}` : ' No amount set'}
                                     </Text>
                                 </View>

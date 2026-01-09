@@ -108,8 +108,8 @@ export default function AddBookingScreen() {
             customer_name: customerName.trim(),
             customer_email: customerEmail.trim() || null,
             customer_phone: customerPhone.trim() || null,
-            check_in: checkIn,
-            check_out: checkOut,
+            check_in_date: checkIn,
+            check_out_date: checkOut,
             total_amount: totalAmount ? parseFloat(totalAmount) : null,
             is_paid: isPaid,
             color: color,
@@ -157,8 +157,8 @@ export default function AddBookingScreen() {
                             <TouchableOpacity
                                 key={property.id}
                                 className={`px-4 py-2 rounded-full mr-2 ${selectedPropertyId === property.id
-                                        ? 'bg-primary-600'
-                                        : 'bg-gray-100'
+                                    ? 'bg-primary-600'
+                                    : 'bg-gray-100'
                                     }`}
                                 onPress={() => setSelectedPropertyId(property.id)}
                             >

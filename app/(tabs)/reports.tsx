@@ -67,7 +67,7 @@ export default function ReportsScreen() {
 
     const now = new Date();
     const currentMonthBookings = bookings.filter(b => {
-        const checkIn = new Date(b.check_in);
+        const checkIn = new Date(b.check_in_date);
         return checkIn.getMonth() === now.getMonth() && checkIn.getFullYear() === now.getFullYear();
     });
 
@@ -76,7 +76,7 @@ export default function ReportsScreen() {
         .reduce((sum, b) => sum + (b.total_amount || 0), 0);
 
     const upcomingBookings = bookings.filter(b => {
-        const checkIn = new Date(b.check_in);
+        const checkIn = new Date(b.check_in_date);
         const today = new Date();
         const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
         return checkIn >= today && checkIn <= weekFromNow;
@@ -173,7 +173,7 @@ export default function ReportsScreen() {
                                 <View className="flex-1">
                                     <Text className="font-medium text-gray-800">{booking.customer_name}</Text>
                                     <Text className="text-gray-500 text-sm">
-                                        Check-in: {new Date(booking.check_in).toLocaleDateString()}
+                                        Check-in: {new Date(booking.check_in_date).toLocaleDateString()}
                                     </Text>
                                 </View>
                                 <Text className="font-bold text-gray-800">${booking.total_amount || 0}</Text>
