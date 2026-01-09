@@ -7,9 +7,7 @@ import { useAuth } from '../../lib/auth';
 
 interface MarkedDates {
     [date: string]: {
-        marked?: boolean;
-        dotColor?: string;
-        periods?: Array<{ startingDay?: boolean; endingDay?: boolean; color: string }>;
+        dots?: Array<{ key: string; color: string }>;
     };
 }
 
@@ -64,16 +62,14 @@ export default function CalendarScreen() {
 
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                 const dateStr = d.toISOString().split('T')[0];
-                const isStart = dateStr === booking.check_in_date;
-                const isEnd = dateStr === booking.check_out_date;
 
                 if (!marked[dateStr]) {
-                    marked[dateStr] = { periods: [] };
+                    marked[dateStr] = { dots: [] };
                 }
 
-                marked[dateStr].periods!.push({
-                    startingDay: isStart,
-                    endingDay: isEnd,
+                // Add a dot for this booking (use booking id as key to avoid duplicates)
+                marked[dateStr].dots!.push({
+                    key: booking.id,
                     color: color,
                 });
             }
@@ -168,7 +164,7 @@ export default function CalendarScreen() {
             {/* Calendar */}
             <View className="mx-4 rounded-xl overflow-hidden shadow-lg bg-white">
                 <Calendar
-                    markingType="multi-period"
+                    markingType="multi-dot"
                     markedDates={markedDates}
                     onDayPress={handleDayPress}
                     theme={{
