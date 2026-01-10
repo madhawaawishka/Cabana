@@ -67,9 +67,9 @@ export default function PropertiesScreen() {
             onPress={() => router.push(`/property/${item.id}`)}
             onLongPress={() => handleDeleteProperty(item.id)}
         >
-            {item.image_url ? (
+            {item.photo_url ? (
                 <Image
-                    source={{ uri: item.image_url }}
+                    source={{ uri: item.photo_url }}
                     className="w-full h-48"
                     resizeMode="cover"
                 />

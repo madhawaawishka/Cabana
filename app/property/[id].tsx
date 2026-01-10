@@ -101,8 +101,8 @@ export default function PropertyDetailsScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
             {/* Property Image */}
-            {property.image_url ? (
-                <Image source={{ uri: property.image_url }} className="w-full h-56" resizeMode="cover" />
+            {property.photo_url ? (
+                <Image source={{ uri: property.photo_url }} className="w-full h-56" resizeMode="cover" />
             ) : (
                 <View className="w-full h-56 bg-indigo-500 items-center justify-center">
                     <Text className="text-8xl">🏨</Text>

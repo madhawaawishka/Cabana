@@ -21,7 +21,7 @@ export default function AddPropertyScreen() {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             allowsEditing: true,
             aspect: [16, 9],
             quality: 0.8,
@@ -37,14 +37,18 @@ export default function AddPropertyScreen() {
             setUploading(true);
 
             const response = await fetch(uri);
-            const blob = await response.blob();
+            const arrayBuffer = await response.arrayBuffer();
 
-            const fileExt = uri.split('.').pop() || 'jpg';
+            const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
             const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+            const contentType = fileExt === 'png' ? 'image/png' : 'image/jpeg';
 
             const { error: uploadError } = await supabase.storage
                 .from('property-images')
-                .upload(fileName, blob);
+                .upload(fileName, arrayBuffer, {
+                    contentType,
+                    upsert: false,
+                });
 
             if (uploadError) {
                 console.error('Upload error:', uploadError);
@@ -85,6 +89,7 @@ export default function AddPropertyScreen() {
         const { error } = await supabase.from('properties').insert({
             owner_id: user.id,
             name: name.trim(),
+            photo_url: imageUrl,
         });
 
         setLoading(false);
