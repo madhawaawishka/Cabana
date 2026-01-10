@@ -1,4 +1,4 @@
-# 🏨 Villa Booking App
+# 🏨 Villa Managment App
 
 A comprehensive mobile application for managing hotel and villa bookings, built with React Native, Expo, and Supabase.
 
