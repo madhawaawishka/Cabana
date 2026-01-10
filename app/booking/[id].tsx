@@ -4,6 +4,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { supabase, Booking, Property, Invoice } from '../../lib/supabase';
+import { cancelBookingNotifications } from '../../lib/notifications';
+import { deleteNotificationsByBookingId } from '../../lib/notificationService';
 
 export default function BookingDetailsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -96,6 +98,11 @@ export default function BookingDetailsScreen() {
                     text: 'Delete',
                     style: 'destructive',
                     onPress: async () => {
+                        // Cancel scheduled local notifications for this booking
+                        await cancelBookingNotifications(id);
+                        // Delete notifications from database
+                        await deleteNotificationsByBookingId(id);
+                        // Delete the booking
                         await supabase.from('bookings').delete().eq('id', id);
                         router.back();
                     },
@@ -283,12 +290,22 @@ export default function BookingDetailsScreen() {
                         <Text className="text-lg font-bold text-gray-800">
                             {new Date(booking.check_in_date).toLocaleDateString()}
                         </Text>
+                        {booking.check_in_time && (
+                            <Text className="text-primary-600 font-medium">
+                                {booking.check_in_time.slice(0, 5)}
+                            </Text>
+                        )}
                     </View>
                     <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm">
                         <Text className="text-gray-500 text-sm">Check-out</Text>
                         <Text className="text-lg font-bold text-gray-800">
                             {new Date(booking.check_out_date).toLocaleDateString()}
                         </Text>
+                        {booking.check_out_time && (
+                            <Text className="text-primary-600 font-medium">
+                                {booking.check_out_time.slice(0, 5)}
+                            </Text>
+                        )}
                     </View>
                 </View>
 

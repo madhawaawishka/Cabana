@@ -113,7 +113,10 @@ export default function SettingsScreen() {
                 <Text className="text-lg font-bold text-gray-800 mb-3">Settings</Text>
 
                 <View className="bg-white rounded-2xl overflow-hidden">
-                    <TouchableOpacity className="flex-row items-center p-4 border-b border-gray-100">
+                    <TouchableOpacity
+                        className="flex-row items-center p-4 border-b border-gray-100"
+                        onPress={() => router.push('/settings/notifications')}
+                    >
                         <Text className="text-xl mr-3">🔔</Text>
                         <Text className="flex-1 text-gray-800">Notifications</Text>
                         <Text className="text-gray-400">›</Text>

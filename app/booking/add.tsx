@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, Switch } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Calendar, DateData } from 'react-native-calendars';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase, Property, generateCustomerColor } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
+import { scheduleBookingNotifications } from '../../lib/notifications';
+import { createCheckInNotification, createCheckOutNotification } from '../../lib/notificationService';
 
 export default function AddBookingScreen() {
     const { propertyId } = useLocalSearchParams<{ propertyId: string }>();
@@ -15,11 +18,48 @@ export default function AddBookingScreen() {
     const [customerPhone, setCustomerPhone] = useState('');
     const [checkIn, setCheckIn] = useState('');
     const [checkOut, setCheckOut] = useState('');
+    const [checkInTime, setCheckInTime] = useState('14:00');
+    const [checkOutTime, setCheckOutTime] = useState('11:00');
     const [totalAmount, setTotalAmount] = useState('');
     const [isPaid, setIsPaid] = useState(false);
     const [notes, setNotes] = useState('');
     const [loading, setLoading] = useState(false);
     const [selectingDate, setSelectingDate] = useState<'checkIn' | 'checkOut' | null>(null);
+    const [showCheckInTimePicker, setShowCheckInTimePicker] = useState(false);
+    const [showCheckOutTimePicker, setShowCheckOutTimePicker] = useState(false);
+
+    const formatTime = (time: string) => {
+        const [hours, minutes] = time.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 || 12;
+        return `${displayHour}:${minutes} ${ampm}`;
+    };
+
+    const parseTimeToDate = (time: string): Date => {
+        const [hours, minutes] = time.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes, 0, 0);
+        return date;
+    };
+
+    const handleCheckInTimeChange = (_event: any, selectedDate?: Date) => {
+        setShowCheckInTimePicker(Platform.OS === 'ios');
+        if (selectedDate) {
+            const hours = selectedDate.getHours().toString().padStart(2, '0');
+            const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
+            setCheckInTime(`${hours}:${minutes}`);
+        }
+    };
+
+    const handleCheckOutTimeChange = (_event: any, selectedDate?: Date) => {
+        setShowCheckOutTimePicker(Platform.OS === 'ios');
+        if (selectedDate) {
+            const hours = selectedDate.getHours().toString().padStart(2, '0');
+            const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
+            setCheckOutTime(`${hours}:${minutes}`);
+        }
+    };
 
     useEffect(() => {
         fetchProperties();
@@ -110,6 +150,8 @@ export default function AddBookingScreen() {
             customer_phone: customerPhone.trim() || null,
             check_in_date: checkIn,
             check_out_date: checkOut,
+            check_in_time: checkInTime,
+            check_out_time: checkOutTime,
             total_amount: totalAmount ? parseFloat(totalAmount) : null,
             is_paid: isPaid,
             color: color,
@@ -127,8 +169,34 @@ export default function AddBookingScreen() {
                 is_clean: false,
             });
 
+            // Schedule push notifications and create in-app notifications
+            const selectedProperty = properties.find(p => p.id === selectedPropertyId);
+            if (selectedProperty) {
+                await scheduleBookingNotifications(booking, selectedProperty.name);
+                // Create in-app notifications for check-in and check-out
+                await createCheckInNotification(
+                    booking.id,
+                    customerName.trim(),
+                    selectedProperty.name,
+                    checkIn,
+                    checkInTime
+                );
+                await createCheckOutNotification(
+                    booking.id,
+                    customerName.trim(),
+                    selectedProperty.name,
+                    checkOut,
+                    checkOutTime
+                );
+            }
+
             Alert.alert('Success', 'Booking created successfully!', [
-                { text: 'OK', onPress: () => router.back() }
+                {
+                    text: 'OK', onPress: () => router.replace({
+                        pathname: '/property/[id]',
+                        params: { id: selectedPropertyId, refresh: Date.now().toString() }
+                    })
+                }
             ]);
         }
 
@@ -253,6 +321,55 @@ export default function AddBookingScreen() {
                                 {getDaysBetween()} nights
                             </Text>
                         </View>
+                    )}
+                </View>
+
+                {/* Time Selection */}
+                <View className="bg-white rounded-2xl p-4 mb-4 shadow-sm">
+                    <Text className="text-lg font-bold text-gray-800 mb-3">Check-in / Check-out Time</Text>
+
+                    <View className="flex-row gap-3">
+                        <View className="flex-1">
+                            <Text className="text-gray-600 mb-2 font-medium">Check-in Time</Text>
+                            <TouchableOpacity
+                                className="bg-gray-100 rounded-xl px-4 py-3 flex-row items-center justify-between"
+                                onPress={() => setShowCheckInTimePicker(true)}
+                            >
+                                <Text className="text-gray-800 font-medium">{formatTime(checkInTime)}</Text>
+                                <Text className="text-gray-400">🕐</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View className="flex-1">
+                            <Text className="text-gray-600 mb-2 font-medium">Check-out Time</Text>
+                            <TouchableOpacity
+                                className="bg-gray-100 rounded-xl px-4 py-3 flex-row items-center justify-between"
+                                onPress={() => setShowCheckOutTimePicker(true)}
+                            >
+                                <Text className="text-gray-800 font-medium">{formatTime(checkOutTime)}</Text>
+                                <Text className="text-gray-400">🕐</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {showCheckInTimePicker && (
+                        <DateTimePicker
+                            value={parseTimeToDate(checkInTime)}
+                            mode="time"
+                            is24Hour={false}
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            onChange={handleCheckInTimeChange}
+                        />
+                    )}
+
+                    {showCheckOutTimePicker && (
+                        <DateTimePicker
+                            value={parseTimeToDate(checkOutTime)}
+                            mode="time"
+                            is24Hour={false}
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            onChange={handleCheckOutTimeChange}
+                        />
                     )}
                 </View>
 

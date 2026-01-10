@@ -1,6 +1,7 @@
 import { Redirect, Tabs } from "expo-router";
 import { useAuth } from "../../lib/auth";
 import { View, ActivityIndicator, Text } from "react-native";
+import { NotificationBell } from "../../components/NotificationBell";
 
 export default function TabsLayout() {
     const { session, loading } = useAuth();
@@ -43,6 +44,7 @@ export default function TabsLayout() {
                 headerTitleStyle: {
                     fontWeight: "bold",
                 },
+                headerRight: () => <NotificationBell />,
             }}
         >
             <Tabs.Screen
@@ -93,3 +95,4 @@ export default function TabsLayout() {
         </Tabs>
     );
 }
+

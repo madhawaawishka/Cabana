@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, Alert, RefreshControl, Modal, Pressable } from 'react-native';
-import { router, useLocalSearchParams, Stack } from 'expo-router';
+import { router, useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
 import { supabase, Property, Booking } from '../../lib/supabase';
 
 export default function PropertyDetailsScreen() {
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { id, refresh } = useLocalSearchParams<{ id: string; refresh?: string }>();
     const [property, setProperty] = useState<Property | null>(null);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
@@ -40,9 +40,13 @@ export default function PropertyDetailsScreen() {
         setRefreshing(false);
     };
 
-    useEffect(() => {
-        fetchData();
-    }, [id]);
+    // Use useFocusEffect to refetch data when screen comes into focus
+    // This ensures newly created bookings appear after navigating back
+    useFocusEffect(
+        useCallback(() => {
+            fetchData();
+        }, [id, refresh])
+    );
 
     const onRefresh = () => {
         setRefreshing(true);

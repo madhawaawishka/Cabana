@@ -41,6 +41,8 @@ export interface Booking {
   customer_phone: string | null;
   check_in_date: string;
   check_out_date: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
   total_amount: number | null;
   is_paid: boolean;
   color: string;
