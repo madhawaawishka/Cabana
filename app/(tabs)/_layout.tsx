@@ -28,8 +28,8 @@ export default function TabsLayout() {
                     backgroundColor: "#FFFFFF",
                     borderTopWidth: 1,
                     borderTopColor: "#E5E7EB",
-                    paddingTop: 8,
-                    paddingBottom: 8,
+                    paddingTop: 4,
+                    paddingBottom: 12,
                     height: 64,
                 },
                 tabBarLabelStyle: {
