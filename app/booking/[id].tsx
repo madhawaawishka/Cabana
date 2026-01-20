@@ -216,22 +216,33 @@ export default function BookingDetailsScreen() {
             const { uri } = await Print.printToFileAsync({ html });
 
             // Save invoice to database
+            const invoiceAmount = booking.total_amount || 0;
             const { data: newInvoice, error } = await supabase.from('invoices').insert({
                 booking_id: booking.id,
                 invoice_number: invoiceNumber,
-                amount: booking.total_amount || 0,
+                amount: invoiceAmount,
+                total: invoiceAmount,  // Required field in the database
                 pdf_url: uri,
             }).select().single();
 
-            if (newInvoice && !error) {
-                setInvoice(newInvoice);
+            if (error) {
+                console.error('Supabase error saving invoice:', error);
             }
 
-            // Share the PDF
-            if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(uri);
+            if (newInvoice && !error) {
+                setInvoice(newInvoice);
+                // Navigate to invoice screen to preview and share
+                router.push(`/invoice/${newInvoice.id}`);
             } else {
-                Alert.alert('Success', `Invoice ${invoiceNumber} generated!`);
+                // Even if database save fails, we can still share the PDF directly
+                if (await Sharing.isAvailableAsync()) {
+                    await Sharing.shareAsync(uri, {
+                        mimeType: 'application/pdf',
+                        dialogTitle: `Share Invoice ${invoiceNumber}`,
+                    });
+                } else {
+                    Alert.alert('Invoice Generated', `Invoice ${invoiceNumber} created successfully!`);
+                }
             }
         } catch (error) {
             console.error('Error generating invoice:', error);
@@ -240,14 +251,13 @@ export default function BookingDetailsScreen() {
     };
 
     const shareInvoice = async () => {
-        if (!invoice?.pdf_url) {
+        if (!invoice?.id) {
             await generateInvoice();
             return;
         }
 
-        if (await Sharing.isAvailableAsync()) {
-            await Sharing.shareAsync(invoice.pdf_url);
-        }
+        // Navigate to invoice screen to preview and share
+        router.push(`/invoice/${invoice.id}`);
     };
 
     if (loading) {
@@ -416,7 +426,7 @@ export default function BookingDetailsScreen() {
                                 className="bg-primary-600 py-3 rounded-xl"
                                 onPress={shareInvoice}
                             >
-                                <Text className="text-white font-bold text-center">📄 Share Invoice</Text>
+                                <Text className="text-white font-bold text-center">📄 View & Share Invoice</Text>
                             </TouchableOpacity>
                         </View>
                     ) : (

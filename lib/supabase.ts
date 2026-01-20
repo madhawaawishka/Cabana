@@ -64,11 +64,22 @@ export interface Housekeeping {
   booking?: Booking;
 }
 
+export interface InvoiceCustomField {
+  id: string;
+  name: string;
+  amount: number;
+  type: 'add' | 'subtract';
+}
+
 export interface Invoice {
   id: string;
   booking_id: string;
   invoice_number: string;
   amount: number;
+  tax?: number;
+  total: number;
+  custom_fields?: InvoiceCustomField[];
+  status?: 'draft' | 'sent' | 'paid' | 'cancelled';
   pdf_url: string | null;
   created_at: string;
   booking?: Booking;
