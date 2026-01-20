@@ -151,7 +151,7 @@ export default function HousekeepingScreen() {
                                         Guest: {item.booking?.customer_name || 'Unknown'}
                                     </Text>
                                     <Text className="text-gray-500 text-sm">
-                                        Checkout: {item.booking?.check_out ? new Date(item.booking.check_out).toLocaleDateString() : 'N/A'}
+                                        Checkout: {item.booking?.check_out_date ? new Date(item.booking.check_out_date).toLocaleDateString() : 'N/A'}
                                     </Text>
                                 </View>
                                 <View className={`px-3 py-1 rounded-full ${item.is_clean ? 'bg-green-100' : 'bg-red-100'}`}>
