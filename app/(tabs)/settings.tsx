@@ -122,18 +122,6 @@ export default function SettingsScreen() {
                         <Text className="text-gray-400">›</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity className="flex-row items-center p-4 border-b border-gray-100">
-                        <Text className="text-xl mr-3">👥</Text>
-                        <Text className="flex-1 text-gray-800">Team Members</Text>
-                        <Text className="text-gray-400">›</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity className="flex-row items-center p-4 border-b border-gray-100">
-                        <Text className="text-xl mr-3">🧾</Text>
-                        <Text className="flex-1 text-gray-800">Invoice Settings</Text>
-                        <Text className="text-gray-400">›</Text>
-                    </TouchableOpacity>
-
                     <TouchableOpacity className="flex-row items-center p-4">
                         <Text className="text-xl mr-3">💳</Text>
                         <Text className="flex-1 text-gray-800">Payment Methods</Text>
@@ -147,11 +135,6 @@ export default function SettingsScreen() {
                 <Text className="text-lg font-bold text-gray-800 mb-3">Support</Text>
 
                 <View className="bg-white rounded-2xl overflow-hidden">
-                    <TouchableOpacity className="flex-row items-center p-4 border-b border-gray-100">
-                        <Text className="text-xl mr-3">❓</Text>
-                        <Text className="flex-1 text-gray-800">Help Center</Text>
-                        <Text className="text-gray-400">›</Text>
-                    </TouchableOpacity>
 
                     <TouchableOpacity className="flex-row items-center p-4">
                         <Text className="text-xl mr-3">📧</Text>
