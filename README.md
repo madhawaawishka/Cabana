@@ -143,7 +143,7 @@ Create a `.env` file in the root directory with the following variables:
 
 ```env
 EXPO_PUBLIC_SUPABASE_URL=https://tavwhriqtgqggycujwrq.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_o9EOOPxLnfOiwSk-6yhcqw_BcLqZWo1
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhdndocmlxdGdxZ2d5Y3Vqd3JxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQwMjMsImV4cCI6MjA4MzMzMDAyM30.vKgEzpwcB68W27guit3T_8TWiab4o-aFe5Nbr5n1MSA
 ```
 
 ### Variable Descriptions
