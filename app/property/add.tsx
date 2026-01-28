@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase, generateCustomerColor } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
+import { getSupabaseErrorMessage } from '../../lib/errorMessages';
 
 export default function AddPropertyScreen() {
     const { user } = useAuth();
@@ -16,7 +17,7 @@ export default function AddPropertyScreen() {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
         if (status !== 'granted') {
-            Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to upload images.');
+            Alert.alert('📷 Camera Access Needed', 'Please allow camera roll access to upload property photos.');
             return;
         }
 
@@ -70,12 +71,12 @@ export default function AddPropertyScreen() {
 
     const handleSave = async () => {
         if (!name.trim()) {
-            Alert.alert('Error', 'Please enter a property name');
+            Alert.alert('🏠 Property Name Required', 'Please give your property a name to continue.');
             return;
         }
 
         if (!user) {
-            Alert.alert('Error', 'You must be logged in');
+            Alert.alert('🔒 Session Expired', 'Please log in again to add a property.');
             return;
         }
 
@@ -95,10 +96,11 @@ export default function AddPropertyScreen() {
         setLoading(false);
 
         if (error) {
-            Alert.alert('Error', 'Failed to create property. Please try again.');
+            const { title, message } = getSupabaseErrorMessage(error, 'property');
+            Alert.alert(title, message);
             console.error('Error creating property:', error);
         } else {
-            Alert.alert('Success', 'Property created successfully!', [
+            Alert.alert('🎉 Property Added!', 'Your property has been created successfully.', [
                 { text: 'OK', onPress: () => router.back() }
             ]);
         }

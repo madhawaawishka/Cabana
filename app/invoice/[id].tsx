@@ -91,13 +91,13 @@ export default function InvoiceScreen() {
     // Add a new custom field
     const handleAddField = async () => {
         if (!newFieldName.trim()) {
-            Alert.alert('Error', 'Please enter a field name');
+            Alert.alert('📝 Field Name Required', 'Please enter a name for this item.');
             return;
         }
 
         const amount = parseFloat(newFieldAmount);
         if (isNaN(amount) || amount <= 0) {
-            Alert.alert('Error', 'Please enter a valid amount');
+            Alert.alert('💰 Invalid Amount', 'Please enter a valid amount greater than zero.');
             return;
         }
 
@@ -121,8 +121,8 @@ export default function InvoiceScreen() {
     // Delete a custom field
     const handleDeleteField = async (fieldId: string) => {
         Alert.alert(
-            'Delete Item',
-            'Are you sure you want to remove this item?',
+            '🗑️ Remove Item',
+            'Are you sure you want to remove this item from the invoice?',
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
@@ -153,7 +153,7 @@ export default function InvoiceScreen() {
 
         if (error) {
             console.error('Error saving custom fields:', error);
-            Alert.alert('Error', 'Failed to save changes');
+            Alert.alert('❌ Save Failed', 'Could not save changes to the invoice. Please try again.');
         } else {
             setCustomFields(fields);
             setInvoice({ ...invoice, custom_fields: fields, total: newTotal });
@@ -247,7 +247,7 @@ export default function InvoiceScreen() {
 
     const handleGeneralShare = async () => {
         if (!invoice?.pdf_url) {
-            Alert.alert('Error', 'Invoice file not available');
+            Alert.alert('📄 PDF Not Ready', 'The invoice PDF is not available yet. Try printing first.');
             return;
         }
 
@@ -257,7 +257,7 @@ export default function InvoiceScreen() {
                 dialogTitle: `Share Invoice ${invoice.invoice_number}`,
             });
         } else {
-            Alert.alert('Error', 'Sharing is not available on this device');
+            Alert.alert('📱 Sharing Unavailable', 'Sharing is not available on this device.');
         }
     };
 
@@ -301,7 +301,7 @@ export default function InvoiceScreen() {
                 await Linking.openURL(webWhatsApp);
             }
         } catch (error) {
-            Alert.alert('Error', 'Unable to open WhatsApp. Please make sure it is installed.');
+            Alert.alert('📱 WhatsApp Not Found', 'Please make sure WhatsApp is installed on your device.');
         }
     };
 
@@ -339,13 +339,13 @@ export default function InvoiceScreen() {
         try {
             await Linking.openURL(emailUrl);
         } catch (error) {
-            Alert.alert('Error', 'Unable to open email app.');
+            Alert.alert('📧 Email App Not Found', 'Could not open your email app. Please try again.');
         }
     };
 
     const handleSavePDF = async () => {
         if (!invoice?.pdf_url) {
-            Alert.alert('Error', 'Invoice file not available');
+            Alert.alert('📄 PDF Not Ready', 'The invoice PDF is not available yet.');
             return;
         }
 
@@ -356,7 +356,7 @@ export default function InvoiceScreen() {
                 dialogTitle: `Save Invoice ${invoice.invoice_number}`,
             });
         } else {
-            Alert.alert('Info', `Invoice saved at: ${invoice.pdf_url}`);
+            Alert.alert('ℹ️ File Location', `Invoice saved at: ${invoice.pdf_url}`);
         }
     };
 

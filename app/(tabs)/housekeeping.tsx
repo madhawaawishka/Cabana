@@ -76,7 +76,7 @@ export default function HousekeepingScreen() {
             .eq('id', item.id);
 
         if (error) {
-            Alert.alert('Error', 'Failed to update cleaning status');
+            Alert.alert('🧹 Update Failed', 'Could not update the cleaning status. Please try again.');
         } else {
             fetchData();
         }
@@ -84,7 +84,7 @@ export default function HousekeepingScreen() {
 
     const toggleOwnerVerification = async (item: HousekeepingWithDetails) => {
         if (profile?.role !== 'owner') {
-            Alert.alert('Permission Denied', 'Only owners can verify cleaning');
+            Alert.alert('🔒 Owner Only', 'Only property owners can verify cleaning completion.');
             return;
         }
 
@@ -94,7 +94,7 @@ export default function HousekeepingScreen() {
             .eq('id', item.id);
 
         if (error) {
-            Alert.alert('Error', 'Failed to verify cleaning');
+            Alert.alert('✅ Verification Failed', 'Could not verify cleaning status. Please try again.');
         } else {
             fetchData();
         }

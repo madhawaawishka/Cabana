@@ -55,8 +55,8 @@ export default function PropertyDetailsScreen() {
 
     const handleDelete = () => {
         Alert.alert(
-            'Delete Property',
-            'Are you sure? This will delete all bookings associated with this property.',
+            '🗑️ Delete Property',
+            'Are you sure? This will permanently delete this property and all its bookings.',
             [
                 { text: 'Cancel', style: 'cancel' },
                 {

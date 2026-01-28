@@ -32,7 +32,7 @@ export default function NotificationSettingsScreen() {
         setHasPermission(granted);
         if (!granted) {
             Alert.alert(
-                'Notifications Disabled',
+                '🔔 Notifications Disabled',
                 'Please enable notifications in your device settings to receive booking reminders.',
                 [{ text: 'OK' }]
             );
@@ -41,7 +41,7 @@ export default function NotificationSettingsScreen() {
 
     const handleSave = async () => {
         await saveNotificationSettings(settings);
-        Alert.alert('Saved', 'Notification settings saved successfully!', [
+        Alert.alert('✅ Settings Saved', 'Your notification preferences have been updated.', [
             { text: 'OK', onPress: () => router.back() }
         ]);
     };
@@ -103,15 +103,15 @@ export default function NotificationSettingsScreen() {
                                         <TouchableOpacity
                                             key={option.value}
                                             className={`px-4 py-2 rounded-full ${settings.checkInReminderHours === option.value
-                                                    ? 'bg-primary-600'
-                                                    : 'bg-gray-100'
+                                                ? 'bg-primary-600'
+                                                : 'bg-gray-100'
                                                 }`}
                                             onPress={() => updateSetting('checkInReminderHours', option.value)}
                                         >
                                             <Text
                                                 className={`font-medium ${settings.checkInReminderHours === option.value
-                                                        ? 'text-white'
-                                                        : 'text-gray-700'
+                                                    ? 'text-white'
+                                                    : 'text-gray-700'
                                                     }`}
                                             >
                                                 {option.label}
@@ -149,15 +149,15 @@ export default function NotificationSettingsScreen() {
                                         <TouchableOpacity
                                             key={option.value}
                                             className={`px-4 py-2 rounded-full ${settings.checkOutReminderHours === option.value
-                                                    ? 'bg-primary-600'
-                                                    : 'bg-gray-100'
+                                                ? 'bg-primary-600'
+                                                : 'bg-gray-100'
                                                 }`}
                                             onPress={() => updateSetting('checkOutReminderHours', option.value)}
                                         >
                                             <Text
                                                 className={`font-medium ${settings.checkOutReminderHours === option.value
-                                                        ? 'text-white'
-                                                        : 'text-gray-700'
+                                                    ? 'text-white'
+                                                    : 'text-gray-700'
                                                     }`}
                                             >
                                                 {option.label}

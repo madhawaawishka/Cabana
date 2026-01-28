@@ -41,8 +41,8 @@ export default function PropertiesScreen() {
 
     const handleDeleteProperty = async (id: string) => {
         Alert.alert(
-            'Delete Property',
-            'Are you sure you want to delete this property? All bookings will also be deleted.',
+            '🗑️ Delete Property',
+            'Are you sure? This will permanently delete this property and all its bookings.',
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
@@ -51,7 +51,7 @@ export default function PropertiesScreen() {
                     onPress: async () => {
                         const { error } = await supabase.from('properties').delete().eq('id', id);
                         if (error) {
-                            Alert.alert('Error', 'Failed to delete property');
+                            Alert.alert('❌ Delete Failed', 'Could not delete this property. Please try again.');
                         } else {
                             fetchProperties();
                         }

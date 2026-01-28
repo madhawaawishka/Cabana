@@ -6,6 +6,7 @@ import * as Sharing from 'expo-sharing';
 import { supabase, Booking, Property, Invoice } from '../../lib/supabase';
 import { cancelBookingNotifications } from '../../lib/notifications';
 import { deleteNotificationsByBookingId } from '../../lib/notificationService';
+import { getSupabaseErrorMessage } from '../../lib/errorMessages';
 
 export default function BookingDetailsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -81,7 +82,8 @@ export default function BookingDetailsScreen() {
             .eq('id', booking.id);
 
         if (error) {
-            Alert.alert('Error', 'Failed to update booking');
+            const { title, message } = getSupabaseErrorMessage(error, 'booking');
+            Alert.alert(title, message);
         } else {
             setEditing(false);
             fetchData();
@@ -90,8 +92,8 @@ export default function BookingDetailsScreen() {
 
     const handleDelete = () => {
         Alert.alert(
-            'Delete Booking',
-            'Are you sure you want to delete this booking?',
+            '🗑️ Delete Booking',
+            'Are you sure? This booking will be permanently removed.',
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
@@ -257,12 +259,12 @@ export default function BookingDetailsScreen() {
                         dialogTitle: `Share Invoice ${invoiceNumber}`,
                     });
                 } else {
-                    Alert.alert('Invoice Generated', `Invoice ${invoiceNumber} created successfully!`);
+                    Alert.alert('🎉 Invoice Generated', `Invoice ${invoiceNumber} created successfully!`);
                 }
             }
         } catch (error) {
             console.error('Error generating invoice:', error);
-            Alert.alert('Error', 'Failed to generate invoice');
+            Alert.alert('❌ Invoice Error', 'Could not generate the invoice. Please try again.');
         }
     };
 

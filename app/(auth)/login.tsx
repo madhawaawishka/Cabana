@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, P
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, router } from 'expo-router';
 import { useAuth } from '../../lib/auth';
+import { getAuthErrorMessage } from '../../lib/errorMessages';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
@@ -11,8 +12,13 @@ export default function LoginScreen() {
     const { signIn } = useAuth();
 
     const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert('Error', 'Please fill in all fields');
+        if (!email.trim()) {
+            Alert.alert('📧 Email Required', 'Please enter your email address to sign in.');
+            return;
+        }
+
+        if (!password) {
+            Alert.alert('🔐 Password Required', 'Please enter your password to sign in.');
             return;
         }
 
@@ -21,7 +27,8 @@ export default function LoginScreen() {
         setLoading(false);
 
         if (error) {
-            Alert.alert('Error', error.message);
+            const { title, message } = getAuthErrorMessage(error);
+            Alert.alert(title, message);
         } else {
             router.replace('/(tabs)');
         }

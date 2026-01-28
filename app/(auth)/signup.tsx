@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, P
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, router } from 'expo-router';
 import { useAuth } from '../../lib/auth';
+import { getAuthErrorMessage } from '../../lib/errorMessages';
 
 export default function SignupScreen() {
     const [fullName, setFullName] = useState('');
@@ -13,18 +14,33 @@ export default function SignupScreen() {
     const { signUp } = useAuth();
 
     const handleSignup = async () => {
-        if (!fullName || !email || !password || !confirmPassword) {
-            Alert.alert('Error', 'Please fill in all fields');
+        if (!fullName.trim()) {
+            Alert.alert('👤 Name Required', 'Please enter your full name.');
+            return;
+        }
+
+        if (!email.trim()) {
+            Alert.alert('📧 Email Required', 'Please enter your email address.');
+            return;
+        }
+
+        if (!password) {
+            Alert.alert('🔐 Password Required', 'Please create a password for your account.');
+            return;
+        }
+
+        if (!confirmPassword) {
+            Alert.alert('🔐 Confirm Password', 'Please confirm your password.');
             return;
         }
 
         if (password !== confirmPassword) {
-            Alert.alert('Error', 'Passwords do not match');
+            Alert.alert('🔐 Password Mismatch', 'Your passwords don\'t match. Please try again.');
             return;
         }
 
         if (password.length < 6) {
-            Alert.alert('Error', 'Password must be at least 6 characters');
+            Alert.alert('🔐 Weak Password', 'Please use at least 6 characters for better security.');
             return;
         }
 
@@ -33,11 +49,12 @@ export default function SignupScreen() {
         setLoading(false);
 
         if (error) {
-            Alert.alert('Error', error.message);
+            const { title, message } = getAuthErrorMessage(error);
+            Alert.alert(title, message);
         } else {
             Alert.alert(
-                'Success',
-                'Account created successfully!',
+                '🎉 Welcome!',
+                'Your account has been created successfully!',
                 [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
             );
         }
