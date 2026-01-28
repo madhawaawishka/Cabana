@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, RefreshControl, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { supabase, Property } from '../../lib/supabase';
+import { propertiesApi, Property } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 
 export default function PropertiesScreen() {
@@ -13,11 +13,7 @@ export default function PropertiesScreen() {
     const fetchProperties = async () => {
         if (!user) return;
 
-        const { data, error } = await supabase
-            .from('properties')
-            .select('*')
-            .eq('owner_id', user.id)
-            .order('created_at', { ascending: false });
+        const { data, error } = await propertiesApi.getAll();
 
         if (error) {
             console.error('Error fetching properties:', error);
@@ -49,7 +45,7 @@ export default function PropertiesScreen() {
                     text: 'Delete',
                     style: 'destructive',
                     onPress: async () => {
-                        const { error } = await supabase.from('properties').delete().eq('id', id);
+                        const { error } = await propertiesApi.delete(id);
                         if (error) {
                             Alert.alert('Error', 'Failed to delete property');
                         } else {

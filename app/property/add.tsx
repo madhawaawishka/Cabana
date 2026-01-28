@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase, generateCustomerColor } from '../../lib/supabase';
+import { propertiesApi, uploadApi, generateCustomerColor } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 
 export default function AddPropertyScreen() {
@@ -36,30 +36,14 @@ export default function AddPropertyScreen() {
         try {
             setUploading(true);
 
-            const response = await fetch(uri);
-            const arrayBuffer = await response.arrayBuffer();
+            const { url, error } = await uploadApi.uploadImage(uri);
 
-            const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
-            const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
-            const contentType = fileExt === 'png' ? 'image/png' : 'image/jpeg';
-
-            const { error: uploadError } = await supabase.storage
-                .from('property-images')
-                .upload(fileName, arrayBuffer, {
-                    contentType,
-                    upsert: false,
-                });
-
-            if (uploadError) {
-                console.error('Upload error:', uploadError);
+            if (error) {
+                console.error('Upload error:', error);
                 return null;
             }
 
-            const { data } = supabase.storage
-                .from('property-images')
-                .getPublicUrl(fileName);
-
-            return data.publicUrl;
+            return url || null;
         } catch (error) {
             console.error('Error uploading image:', error);
             return null;
@@ -86,8 +70,7 @@ export default function AddPropertyScreen() {
             imageUrl = await uploadImage(image);
         }
 
-        const { error } = await supabase.from('properties').insert({
-            owner_id: user.id,
+        const { error } = await propertiesApi.create({
             name: name.trim(),
             photo_url: imageUrl,
         });

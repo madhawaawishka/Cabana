@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, KeyboardAvo
 import { router, useLocalSearchParams } from 'expo-router';
 import { Calendar, DateData } from 'react-native-calendars';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { supabase, Property, generateCustomerColor } from '../../lib/supabase';
+import { propertiesApi, bookingsApi, Property, generateCustomerColor } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { scheduleBookingNotifications } from '../../lib/notifications';
 import { createCheckInNotification, createCheckOutNotification } from '../../lib/notificationService';
@@ -68,10 +68,7 @@ export default function AddBookingScreen() {
     const fetchProperties = async () => {
         if (!user) return;
 
-        const { data } = await supabase
-            .from('properties')
-            .select('*')
-            .eq('owner_id', user.id);
+        const { data } = await propertiesApi.getAll();
 
         if (data) {
             setProperties(data);
@@ -143,7 +140,7 @@ export default function AddBookingScreen() {
 
         const color = generateCustomerColor(customerName);
 
-        const { data: booking, error } = await supabase.from('bookings').insert({
+        const { data: booking, error } = await bookingsApi.create({
             property_id: selectedPropertyId,
             customer_name: customerName.trim(),
             customer_email: customerEmail.trim() || null,
@@ -156,19 +153,12 @@ export default function AddBookingScreen() {
             is_paid: isPaid,
             color: color,
             notes: notes.trim() || null,
-        }).select().single();
+        });
 
         if (error) {
             Alert.alert('Error', 'Failed to create booking');
             console.error('Booking error:', error);
-        } else {
-            // Create housekeeping entry for this booking
-            await supabase.from('housekeeping').insert({
-                property_id: selectedPropertyId,
-                booking_id: booking.id,
-                is_clean: false,
-            });
-
+        } else if (booking) {
             // Schedule push notifications and create in-app notifications
             const selectedProperty = properties.find(p => p.id === selectedPropertyId);
             if (selectedProperty) {

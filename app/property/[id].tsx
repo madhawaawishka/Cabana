@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, Alert, RefreshControl, Modal, Pressable } from 'react-native';
 import { router, useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
-import { supabase, Property, Booking } from '../../lib/supabase';
+import { propertiesApi, bookingsApi, Property, Booking } from '../../lib/api';
 
 export default function PropertyDetailsScreen() {
     const { id, refresh } = useLocalSearchParams<{ id: string; refresh?: string }>();
@@ -14,26 +14,12 @@ export default function PropertyDetailsScreen() {
     const fetchData = async () => {
         if (!id) return;
 
-        // Fetch property
-        const { data: propData, error: propError } = await supabase
-            .from('properties')
-            .select('*')
-            .eq('id', id)
-            .single();
+        // Fetch property with bookings
+        const { data: propData, error: propError } = await propertiesApi.getById(id);
 
         if (propData && !propError) {
             setProperty(propData);
-        }
-
-        // Fetch bookings
-        const { data: bookingsData } = await supabase
-            .from('bookings')
-            .select('*')
-            .eq('property_id', id)
-            .order('check_in', { ascending: false });
-
-        if (bookingsData) {
-            setBookings(bookingsData);
+            setBookings(propData.bookings || []);
         }
 
         setLoading(false);
@@ -63,7 +49,7 @@ export default function PropertyDetailsScreen() {
                     text: 'Delete',
                     style: 'destructive',
                     onPress: async () => {
-                        await supabase.from('properties').delete().eq('id', id);
+                        await propertiesApi.delete(id);
                         router.back();
                     },
                 },

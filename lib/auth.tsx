@@ -1,11 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase, Profile } from './supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authApi, setAuthToken, User } from './api';
 
 interface AuthContextType {
     user: User | null;
-    session: Session | null;
-    profile: Profile | null;
     loading: boolean;
     signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
     signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
@@ -15,97 +13,90 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const TOKEN_KEY = 'auth_token';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [session, setSession] = useState<Session | null>(null);
-    const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchProfile = async (userId: string) => {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
-
-        if (data && !error) {
-            setProfile(data as Profile);
-        }
-    };
-
+    // Load token and verify session on mount
     useEffect(() => {
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchProfile(session.user.id);
-            }
-            setLoading(false);
-        });
+        const initAuth = async () => {
+            try {
+                const storedToken = await AsyncStorage.getItem(TOKEN_KEY);
 
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchProfile(session.user.id);
-            } else {
-                setProfile(null);
-            }
-            setLoading(false);
-        });
+                if (storedToken) {
+                    setAuthToken(storedToken);
 
-        return () => subscription.unsubscribe();
+                    // Verify token is still valid
+                    const { data, error } = await authApi.verify();
+
+                    if (data && !error) {
+                        setUser(data.user);
+                    } else {
+                        // Token invalid, clear it
+                        await AsyncStorage.removeItem(TOKEN_KEY);
+                        setAuthToken(null);
+                    }
+                }
+            } catch (error) {
+                console.error('Error initializing auth:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initAuth();
     }, []);
 
     const signIn = async (email: string, password: string) => {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        return { error: error as Error | null };
+        const { data, error } = await authApi.login(email, password);
+
+        if (error) {
+            return { error: new Error(error) };
+        }
+
+        if (data) {
+            await AsyncStorage.setItem(TOKEN_KEY, data.token);
+            setAuthToken(data.token);
+            setUser(data.user);
+        }
+
+        return { error: null };
     };
 
     const signUp = async (email: string, password: string, fullName: string) => {
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: { full_name: fullName },
-            },
-        });
+        const { data, error } = await authApi.register(email, password, fullName);
 
-        if (data.user && !error) {
-            // Create user record in public.users table
-            const { error: insertError } = await supabase.from('users').insert({
-                id: data.user.id,
-                email,
-                full_name: fullName,
-                role: 'owner',
-            });
-
-            if (insertError) {
-                console.error('Error creating user record:', insertError);
-            }
+        if (error) {
+            return { error: new Error(error) };
         }
 
-        return { error: error as Error | null };
+        if (data) {
+            await AsyncStorage.setItem(TOKEN_KEY, data.token);
+            setAuthToken(data.token);
+            setUser(data.user);
+        }
+
+        return { error: null };
     };
 
     const signOut = async () => {
-        await supabase.auth.signOut();
-        setProfile(null);
+        await AsyncStorage.removeItem(TOKEN_KEY);
+        setAuthToken(null);
+        setUser(null);
     };
 
     const refreshProfile = async () => {
-        if (user) {
-            await fetchProfile(user.id);
+        const { data } = await authApi.getProfile();
+        if (data) {
+            setUser(data.user);
         }
     };
 
     return (
         <AuthContext.Provider value={{
             user,
-            session,
-            profile,
             loading,
             signIn,
             signUp,
@@ -124,3 +115,6 @@ export const useAuth = () => {
     }
     return context;
 };
+
+// Re-export Profile type as alias for User for backwards compatibility
+export type Profile = User;

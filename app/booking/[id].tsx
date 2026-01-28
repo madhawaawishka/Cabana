@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Switch } fr
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { supabase, Booking, Property, Invoice } from '../../lib/supabase';
+import { bookingsApi, propertiesApi, invoicesApi, Booking, Property, Invoice } from '../../lib/api';
 import { cancelBookingNotifications } from '../../lib/notifications';
 import { deleteNotificationsByBookingId } from '../../lib/notificationService';
 
@@ -21,11 +21,7 @@ export default function BookingDetailsScreen() {
         if (!id) return;
 
         // Fetch booking
-        const { data: bookingData, error } = await supabase
-            .from('bookings')
-            .select('*')
-            .eq('id', id)
-            .single();
+        const { data: bookingData, error } = await bookingsApi.getById(id);
 
         if (bookingData && !error) {
             setBooking(bookingData);
@@ -33,22 +29,14 @@ export default function BookingDetailsScreen() {
             setEditedPaid(bookingData.is_paid);
 
             // Fetch property
-            const { data: propData } = await supabase
-                .from('properties')
-                .select('*')
-                .eq('id', bookingData.property_id)
-                .single();
+            const { data: propData } = await propertiesApi.getById(bookingData.property_id);
 
             if (propData) {
                 setProperty(propData);
             }
 
             // Fetch invoice if exists
-            const { data: invoiceData } = await supabase
-                .from('invoices')
-                .select('*')
-                .eq('booking_id', id)
-                .single();
+            const { data: invoiceData } = await invoicesApi.getByBooking(id);
 
             if (invoiceData) {
                 setInvoice(invoiceData);
@@ -72,13 +60,10 @@ export default function BookingDetailsScreen() {
     const handleUpdate = async () => {
         if (!booking) return;
 
-        const { error } = await supabase
-            .from('bookings')
-            .update({
-                total_amount: editedAmount ? parseFloat(editedAmount) : null,
-                is_paid: editedPaid,
-            })
-            .eq('id', booking.id);
+        const { error } = await bookingsApi.update(booking.id, {
+            total_amount: editedAmount ? parseFloat(editedAmount) : null,
+            is_paid: editedPaid,
+        });
 
         if (error) {
             Alert.alert('Error', 'Failed to update booking');
@@ -103,7 +88,7 @@ export default function BookingDetailsScreen() {
                         // Delete notifications from database
                         await deleteNotificationsByBookingId(id);
                         // Delete the booking
-                        await supabase.from('bookings').delete().eq('id', id);
+                        await bookingsApi.delete(id);
                         router.back();
                     },
                 },
@@ -217,16 +202,16 @@ export default function BookingDetailsScreen() {
 
             // Save invoice to database
             const invoiceAmount = booking.total_amount || 0;
-            const { data: newInvoice, error } = await supabase.from('invoices').insert({
+            const { data: newInvoice, error } = await invoicesApi.create({
                 booking_id: booking.id,
                 invoice_number: invoiceNumber,
                 amount: invoiceAmount,
-                total: invoiceAmount,  // Required field in the database
+                total: invoiceAmount,
                 pdf_url: uri,
-            }).select().single();
+            });
 
             if (error) {
-                console.error('Supabase error saving invoice:', error);
+                console.error('Error saving invoice:', error);
             }
 
             if (newInvoice && !error) {

@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { router, useFocusEffect } from 'expo-router';
-import { supabase, Booking, Property, generateCustomerColor } from '../../lib/supabase';
+import { propertiesApi, bookingsApi, Property, Booking, generateCustomerColor } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 
 interface MarkedDates {
@@ -23,10 +23,7 @@ export default function CalendarScreen() {
     const fetchProperties = async () => {
         if (!user) return;
 
-        const { data, error } = await supabase
-            .from('properties')
-            .select('*')
-            .eq('owner_id', user.id);
+        const { data, error } = await propertiesApi.getAll();
 
         if (data && !error) {
             setProperties(data);
@@ -39,11 +36,7 @@ export default function CalendarScreen() {
     const fetchBookings = async () => {
         if (!selectedProperty) return;
 
-        const { data, error } = await supabase
-            .from('bookings')
-            .select('*')
-            .eq('property_id', selectedProperty.id)
-            .order('check_in_date', { ascending: true });
+        const { data, error } = await bookingsApi.getByProperty(selectedProperty.id);
 
         if (data && !error) {
             setBookings(data);
