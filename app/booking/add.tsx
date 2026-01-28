@@ -23,6 +23,8 @@ export default function AddBookingScreen() {
     const [checkOutTime, setCheckOutTime] = useState('11:00');
     const [totalAmount, setTotalAmount] = useState('');
     const [isPaid, setIsPaid] = useState(false);
+    const [hasAdvancePayment, setHasAdvancePayment] = useState(false);
+    const [advanceAmount, setAdvanceAmount] = useState('');
     const [notes, setNotes] = useState('');
     const [loading, setLoading] = useState(false);
     const [selectingDate, setSelectingDate] = useState<'checkIn' | 'checkOut' | null>(null);
@@ -228,20 +230,149 @@ export default function AddBookingScreen() {
         return marked;
     };
 
+    // Helper function to get user-friendly error messages
+    const getErrorMessage = (error: any): { title: string; message: string } => {
+        // PostgreSQL error codes
+        const errorCode = error?.code;
+        const errorMessage = error?.message?.toLowerCase() || '';
+        const errorDetails = error?.details?.toLowerCase() || '';
+        const errorHint = error?.hint?.toLowerCase() || '';
+
+        // Not-null violation (23502) - missing required fields
+        if (errorCode === '23502') {
+            if (errorMessage.includes('total_amount') || errorDetails.includes('total_amount')) {
+                return {
+                    title: '💰 Missing Amount',
+                    message: 'Please add a total amount to complete the booking.'
+                };
+            }
+            if (errorMessage.includes('customer_name') || errorDetails.includes('customer_name')) {
+                return {
+                    title: '👤 Missing Customer',
+                    message: 'Please enter the customer name to continue.'
+                };
+            }
+            if (errorMessage.includes('check_in') || errorDetails.includes('check_in')) {
+                return {
+                    title: '📅 Missing Check-in Date',
+                    message: 'Please select a check-in date for this booking.'
+                };
+            }
+            if (errorMessage.includes('check_out') || errorDetails.includes('check_out')) {
+                return {
+                    title: '📅 Missing Check-out Date',
+                    message: 'Please select a check-out date for this booking.'
+                };
+            }
+            if (errorMessage.includes('property') || errorDetails.includes('property')) {
+                return {
+                    title: '🏠 Missing Property',
+                    message: 'Please select a property for this booking.'
+                };
+            }
+            return {
+                title: '📝 Missing Information',
+                message: 'Please fill in all required fields to complete the booking.'
+            };
+        }
+
+        // Foreign key violation (23503) - invalid reference
+        if (errorCode === '23503') {
+            return {
+                title: '🔗 Invalid Reference',
+                message: 'The selected property may no longer exist. Please refresh and try again.'
+            };
+        }
+
+        // Unique violation (23505) - duplicate entry
+        if (errorCode === '23505') {
+            return {
+                title: '📅 Booking Conflict',
+                message: 'A booking already exists for these dates. Please choose different dates.'
+            };
+        }
+
+        // Check constraint violation (23514)
+        if (errorCode === '23514') {
+            if (errorMessage.includes('amount') || errorDetails.includes('amount')) {
+                return {
+                    title: '💰 Invalid Amount',
+                    message: 'Please enter a valid amount greater than zero.'
+                };
+            }
+            if (errorMessage.includes('date') || errorDetails.includes('date')) {
+                return {
+                    title: '📅 Invalid Dates',
+                    message: 'Check-out date must be after check-in date.'
+                };
+            }
+            return {
+                title: '⚠️ Invalid Data',
+                message: 'Some values are invalid. Please check your entries and try again.'
+            };
+        }
+
+        // RLS policy violation
+        if (errorCode === '42501' || errorMessage.includes('row-level security')) {
+            return {
+                title: '🔒 Permission Denied',
+                message: 'You don\'t have permission to create this booking. Please try logging in again.'
+            };
+        }
+
+        // Network/connection errors
+        if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('connection')) {
+            return {
+                title: '📶 Connection Error',
+                message: 'Unable to connect. Please check your internet connection and try again.'
+            };
+        }
+
+        // Default fallback
+        return {
+            title: '❌ Booking Failed',
+            message: 'Something went wrong while creating the booking. Please try again.'
+        };
+    };
+
     const handleSave = async () => {
+        // Custom validation with friendly messages
         if (!selectedPropertyId) {
-            Alert.alert('Error', 'Please select a property');
+            Alert.alert('🏠 Select Property', 'Please choose a property for this booking.');
             return;
         }
 
         if (!customerName.trim()) {
-            Alert.alert('Error', 'Please enter customer name');
+            Alert.alert('👤 Customer Name Required', 'Please enter the customer\'s name to continue.');
             return;
         }
 
-        if (!checkIn || !checkOut) {
-            Alert.alert('Error', 'Please select check-in and check-out dates');
+        if (!checkIn) {
+            Alert.alert('📅 Check-in Date Required', 'Please select a check-in date for the booking.');
             return;
+        }
+
+        if (!checkOut) {
+            Alert.alert('📅 Check-out Date Required', 'Please select a check-out date for the booking.');
+            return;
+        }
+
+        if (!totalAmount || parseFloat(totalAmount) <= 0) {
+            Alert.alert('💰 Total Amount Required', 'Please add a total amount to complete the booking.');
+            return;
+        }
+
+        if (hasAdvancePayment && advanceAmount) {
+            const advance = parseFloat(advanceAmount);
+            const total = parseFloat(totalAmount);
+            if (advance > total) {
+                Alert.alert('💰 Invalid Advance Amount', 'Advance payment cannot be greater than the total amount.');
+                return;
+            }
+            if (advance <= 0) {
+                Alert.alert('💰 Invalid Advance Amount', 'Please enter a valid advance payment amount.');
+                return;
+            }
         }
 
         setLoading(true);
@@ -257,14 +388,16 @@ export default function AddBookingScreen() {
             check_out_date: checkOut,
             check_in_time: checkInTime,
             check_out_time: checkOutTime,
-            total_amount: totalAmount ? parseFloat(totalAmount) : null,
+            total_amount: parseFloat(totalAmount),
+            advance_payment: hasAdvancePayment && advanceAmount ? parseFloat(advanceAmount) : null,
             is_paid: isPaid,
             color: color,
             notes: notes.trim() || null,
         }).select().single();
 
         if (error) {
-            Alert.alert('Error', 'Failed to create booking');
+            const { title, message } = getErrorMessage(error);
+            Alert.alert(title, message);
             console.error('Booking error:', error);
         } else {
             // Create housekeeping entry for this booking
@@ -492,7 +625,7 @@ export default function AddBookingScreen() {
                         keyboardType="decimal-pad"
                     />
 
-                    <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center justify-between mb-3">
                         <Text className="text-gray-600 font-medium">Mark as Paid</Text>
                         <Switch
                             value={isPaid}
@@ -501,6 +634,58 @@ export default function AddBookingScreen() {
                             thumbColor={isPaid ? '#4F46E5' : '#9CA3AF'}
                         />
                     </View>
+
+                    {/* Advance Payment Toggle */}
+                    <View className="flex-row items-center justify-between mb-3">
+                        <Text className="text-gray-600 font-medium">Advance Payment Received</Text>
+                        <Switch
+                            value={hasAdvancePayment}
+                            onValueChange={(value) => {
+                                setHasAdvancePayment(value);
+                                if (!value) {
+                                    setAdvanceAmount('');
+                                }
+                            }}
+                            trackColor={{ false: '#E5E7EB', true: '#86EFAC' }}
+                            thumbColor={hasAdvancePayment ? '#22C55E' : '#9CA3AF'}
+                        />
+                    </View>
+
+                    {/* Advance Payment Amount Input */}
+                    {hasAdvancePayment && (
+                        <View className="bg-green-50 rounded-xl p-3 mb-3" style={{ backgroundColor: '#F0FDF4' }}>
+                            <Text className="text-green-700 mb-2 font-medium" style={{ color: '#15803D' }}>Advance Amount</Text>
+                            <TextInput
+                                className="bg-white rounded-xl px-4 py-3 text-gray-800 border border-green-200"
+                                placeholder="Enter advance amount"
+                                placeholderTextColor="#9CA3AF"
+                                value={advanceAmount}
+                                onChangeText={setAdvanceAmount}
+                                keyboardType="decimal-pad"
+                                style={{ borderColor: '#BBF7D0' }}
+                            />
+
+                            {/* Balance Calculation */}
+                            {totalAmount && advanceAmount && (
+                                <View className="mt-3 pt-3 border-t" style={{ borderColor: '#BBF7D0' }}>
+                                    <View className="flex-row justify-between mb-1">
+                                        <Text className="text-gray-600">Total Amount:</Text>
+                                        <Text className="text-gray-800 font-medium">${parseFloat(totalAmount).toFixed(2)}</Text>
+                                    </View>
+                                    <View className="flex-row justify-between mb-1">
+                                        <Text className="text-green-600" style={{ color: '#16A34A' }}>Advance Paid:</Text>
+                                        <Text className="text-green-600 font-medium" style={{ color: '#16A34A' }}>-${parseFloat(advanceAmount).toFixed(2)}</Text>
+                                    </View>
+                                    <View className="flex-row justify-between pt-2 border-t" style={{ borderColor: '#BBF7D0' }}>
+                                        <Text className="text-primary-700 font-bold" style={{ color: '#4338CA' }}>Balance Due:</Text>
+                                        <Text className="text-primary-700 font-bold text-lg" style={{ color: '#4338CA' }}>
+                                            ${Math.max(0, parseFloat(totalAmount) - parseFloat(advanceAmount)).toFixed(2)}
+                                        </Text>
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+                    )}
                 </View>
 
                 {/* Notes */}

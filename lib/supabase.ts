@@ -1,4 +1,4 @@
-import 'react-native-url-polyfill/auto';
+ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
@@ -44,6 +44,7 @@ export interface Booking {
   check_in_time: string | null;
   check_out_time: string | null;
   total_amount: number | null;
+  advance_payment: number | null;
   is_paid: boolean;
   color: string;
   notes: string | null;

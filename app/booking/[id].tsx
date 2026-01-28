@@ -191,9 +191,15 @@ export default function BookingDetailsScreen() {
             <td>${getDaysBetween(booking.check_in_date, booking.check_out_date)}</td>
             <td style="text-align: right;">$${booking.total_amount || 0}</td>
           </tr>
+          ${booking.advance_payment ? `
+          <tr>
+            <td colspan="4" style="color: #059669;">Advance Payment Received</td>
+            <td style="text-align: right; color: #059669;">-$${booking.advance_payment}</td>
+          </tr>
+          ` : ''}
           <tr class="total-row">
-            <td colspan="4">Total Amount</td>
-            <td style="text-align: right;">$${booking.total_amount || 0}</td>
+            <td colspan="4">${booking.advance_payment ? 'Balance Due' : 'Total Amount'}</td>
+            <td style="text-align: right;">$${(booking.total_amount || 0) - (booking.advance_payment || 0)}</td>
           </tr>
         </table>
 
@@ -215,13 +221,23 @@ export default function BookingDetailsScreen() {
         try {
             const { uri } = await Print.printToFileAsync({ html });
 
-            // Save invoice to database
+            // Save invoice to database with advance payment as custom field if exists
             const invoiceAmount = booking.total_amount || 0;
+            const advancePayment = booking.advance_payment || 0;
+            const customFields = advancePayment > 0 ? [{
+                id: 'advance_payment',
+                name: 'Advance Payment',
+                amount: advancePayment,
+                type: 'subtract' as const
+            }] : [];
+            const invoiceTotal = Math.max(0, invoiceAmount - advancePayment);
+
             const { data: newInvoice, error } = await supabase.from('invoices').insert({
                 booking_id: booking.id,
                 invoice_number: invoiceNumber,
                 amount: invoiceAmount,
-                total: invoiceAmount,  // Required field in the database
+                total: invoiceTotal,
+                custom_fields: customFields.length > 0 ? customFields : null,
                 pdf_url: uri,
             }).select().single();
 
@@ -390,11 +406,29 @@ export default function BookingDetailsScreen() {
                     ) : (
                         <>
                             <View className="flex-row items-center justify-between mb-2">
-                                <Text className="text-gray-600">Amount</Text>
-                                <Text className="text-2xl font-bold text-gray-800">
+                                <Text className="text-gray-600">Total Amount</Text>
+                                <Text className="text-xl font-bold text-gray-800">
                                     ${booking.total_amount || 0}
                                 </Text>
                             </View>
+
+                            {booking.advance_payment && booking.advance_payment > 0 && (
+                                <>
+                                    <View className="flex-row items-center justify-between mb-2">
+                                        <Text className="text-green-600" style={{ color: '#16A34A' }}>Advance Paid</Text>
+                                        <Text className="text-green-600 font-medium" style={{ color: '#16A34A' }}>
+                                            -${booking.advance_payment}
+                                        </Text>
+                                    </View>
+                                    <View className="flex-row items-center justify-between mb-2 pt-2 border-t border-gray-100">
+                                        <Text className="text-primary-700 font-bold" style={{ color: '#4338CA' }}>Balance Due</Text>
+                                        <Text className="text-primary-700 font-bold text-lg" style={{ color: '#4338CA' }}>
+                                            ${Math.max(0, (booking.total_amount || 0) - (booking.advance_payment || 0))}
+                                        </Text>
+                                    </View>
+                                </>
+                            )}
+
                             <View className="flex-row items-center justify-between">
                                 <Text className="text-gray-600">Status</Text>
                                 <View className={`px-3 py-1 rounded-full ${booking.is_paid ? 'bg-green-100' : 'bg-red-100'}`}>
