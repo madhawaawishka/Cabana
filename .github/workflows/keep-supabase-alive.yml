@@ -1,0 +1,31 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Runs every 5 days at midnight UTC to stay within the 7-day inactivity limit
+    - cron: '0 0 */5 * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+
+jobs:
+  ping-database:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Database
+        run: |
+          echo "Pinging Supabase to keep the project alive..."
+          
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          
+          if [ "$response" -eq 200 ]; then
+            echo "✅ Supabase ping successful! (HTTP $response)"
+          else
+            echo "⚠️ Supabase ping returned HTTP $response"
+            exit 1
+          fi
+
+      - name: Log Success
+        run: |
+          echo "🎉 Supabase project kept alive at $(date -u)"
