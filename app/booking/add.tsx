@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, KeyboardAvo
 import { router, useLocalSearchParams } from 'expo-router';
 import { Calendar, DateData } from 'react-native-calendars';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { supabase, Property, generateCustomerColor } from '../../lib/supabase';
+import { supabase, Property, Booking, generateCustomerColor } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
 import { scheduleBookingNotifications } from '../../lib/notifications';
 import { createCheckInNotification, createCheckOutNotification } from '../../lib/notificationService';
@@ -13,6 +13,7 @@ export default function AddBookingScreen() {
     const { user } = useAuth();
     const [properties, setProperties] = useState<Property[]>([]);
     const [selectedPropertyId, setSelectedPropertyId] = useState<string>(propertyId || '');
+    const [existingBookings, setExistingBookings] = useState<Booking[]>([]);
     const [customerName, setCustomerName] = useState('');
     const [customerEmail, setCustomerEmail] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
@@ -65,6 +66,13 @@ export default function AddBookingScreen() {
         fetchProperties();
     }, [user]);
 
+    // Fetch existing bookings when property changes
+    useEffect(() => {
+        if (selectedPropertyId) {
+            fetchExistingBookings();
+        }
+    }, [selectedPropertyId]);
+
     const fetchProperties = async () => {
         if (!user) return;
 
@@ -81,7 +89,61 @@ export default function AddBookingScreen() {
         }
     };
 
+    const fetchExistingBookings = async () => {
+        if (!selectedPropertyId) return;
+
+        const { data, error } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('property_id', selectedPropertyId);
+
+        if (data && !error) {
+            setExistingBookings(data);
+        }
+    };
+
+    // Check if a date falls within any existing booking
+    const isDateBooked = (dateString: string): Booking | null => {
+        const date = new Date(dateString);
+        for (const booking of existingBookings) {
+            const checkInDate = new Date(booking.check_in_date);
+            const checkOutDate = new Date(booking.check_out_date);
+            if (date >= checkInDate && date <= checkOutDate) {
+                return booking;
+            }
+        }
+        return null;
+    };
+
+    // Check if a date range overlaps with any existing booking
+    const hasDateRangeConflict = (startDate: string, endDate: string): Booking | null => {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        for (const booking of existingBookings) {
+            const bookingStart = new Date(booking.check_in_date);
+            const bookingEnd = new Date(booking.check_out_date);
+
+            // Check if ranges overlap
+            if (start <= bookingEnd && end >= bookingStart) {
+                return booking;
+            }
+        }
+        return null;
+    };
+
     const handleDateSelect = (day: DateData) => {
+        const conflictingBooking = isDateBooked(day.dateString);
+
+        if (conflictingBooking) {
+            Alert.alert(
+                '📅 Date Already Booked',
+                `This date is already booked by ${conflictingBooking.customer_name} (${new Date(conflictingBooking.check_in_date).toLocaleDateString()} - ${new Date(conflictingBooking.check_out_date).toLocaleDateString()}).`,
+                [{ text: 'OK', style: 'default' }]
+            );
+            return;
+        }
+
         if (selectingDate === 'checkIn') {
             setCheckIn(day.dateString);
             if (checkOut && new Date(day.dateString) >= new Date(checkOut)) {
@@ -92,6 +154,20 @@ export default function AddBookingScreen() {
                 Alert.alert('Invalid Date', 'Check-out must be after check-in');
                 return;
             }
+
+            // Check if the date range conflicts with existing bookings
+            if (checkIn) {
+                const rangeConflict = hasDateRangeConflict(checkIn, day.dateString);
+                if (rangeConflict) {
+                    Alert.alert(
+                        '📅 Booking Conflict',
+                        `Your selected dates overlap with a booking by ${rangeConflict.customer_name} (${new Date(rangeConflict.check_in_date).toLocaleDateString()} - ${new Date(rangeConflict.check_out_date).toLocaleDateString()}).`,
+                        [{ text: 'OK', style: 'default' }]
+                    );
+                    return;
+                }
+            }
+
             setCheckOut(day.dateString);
         }
         setSelectingDate(null);
@@ -100,12 +176,37 @@ export default function AddBookingScreen() {
     const getMarkedDates = () => {
         const marked: any = {};
 
+        // First, mark all existing booked dates with a disabled/red color
+        existingBookings.forEach((booking) => {
+            const start = new Date(booking.check_in_date);
+            const end = new Date(booking.check_out_date);
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dateStr = d.toISOString().split('T')[0];
+                marked[dateStr] = {
+                    marked: true,
+                    dotColor: booking.color || '#EF4444',
+                    disableTouchEvent: false,
+                };
+            }
+        });
+
+        // Then, overlay the currently selected dates
         if (checkIn) {
-            marked[checkIn] = { selected: true, selectedColor: '#4F46E5', startingDay: true };
+            marked[checkIn] = {
+                ...marked[checkIn],
+                selected: true,
+                selectedColor: '#4F46E5',
+                startingDay: true
+            };
         }
 
         if (checkOut) {
-            marked[checkOut] = { selected: true, selectedColor: '#4F46E5', endingDay: true };
+            marked[checkOut] = {
+                ...marked[checkOut],
+                selected: true,
+                selectedColor: '#4F46E5',
+                endingDay: true
+            };
         }
 
         // Mark days in between
@@ -115,7 +216,11 @@ export default function AddBookingScreen() {
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                 const dateStr = d.toISOString().split('T')[0];
                 if (dateStr !== checkIn && dateStr !== checkOut) {
-                    marked[dateStr] = { selected: true, selectedColor: '#A5B4FC' };
+                    marked[dateStr] = {
+                        ...marked[dateStr],
+                        selected: true,
+                        selectedColor: '#A5B4FC'
+                    };
                 }
             }
         }
